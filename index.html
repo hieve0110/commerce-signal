@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Commerce Signal</title>
+<meta name="description" content="커머스 경쟁사의 업데이트를 매일 모아 보는 대시보드">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* ---------- 색상 토큰 (다크모드는 아래에서 덮어씀) ---------- */
+  :root {
+    --bg: #f3f5f9;
+    --card: #ffffff;
+    --line: #e6e9ef;
+    --text: #111827;
+    --sub: #6b7280;
+    --muted: #9ca3af;
+    --brand: #2563eb;
+    --brand-soft: #eaf1ff;
+    --chip: #ffffff;
+    --chip-on: #111827;
+    --chip-on-text: #ffffff;
+    --high: #e11d48; --high-soft: #ffe4ea;
+    --mid: #d97706;  --mid-soft: #fff3db;
+    --low: #6b7280;  --low-soft: #f1f3f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0f17; --card: #141a24; --line: #232b38; --text: #f3f4f6; --sub: #a3acba; --muted: #6b7686;
+      --brand: #60a5fa; --brand-soft: #172338; --chip: #141a24; --chip-on: #f3f4f6; --chip-on-text: #0b0f17;
+      --high: #fb7185; --high-soft: #3a1520; --mid: #fbbf24; --mid-soft: #33270d; --low: #a3acba; --low-soft: #1c2330;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0f17; --card: #141a24; --line: #232b38; --text: #f3f4f6; --sub: #a3acba; --muted: #6b7686;
+    --brand: #60a5fa; --brand-soft: #172338; --chip: #141a24; --chip-on: #f3f4f6; --chip-on-text: #0b0f17;
+    --high: #fb7185; --high-soft: #3a1520; --mid: #fbbf24; --mid-soft: #33270d; --low: #a3acba; --low-soft: #1c2330;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+    -webkit-font-smoothing: antialiased; word-break: keep-all; overflow-wrap: anywhere;
+  }
+  .app { max-width: 560px; margin: 0 auto; min-height: 100vh; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: inherit; }
+
+  /* ---------- 헤더 + 탭 ---------- */
+  header { position: sticky; top: 0; z-index: 10; background: var(--card); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 18px 16px 8px; }
+  .logo { width: 44px; height: 44px; border-radius: 12px; background: var(--brand); display: grid; place-items: center; font-size: 24px; }
+  .brand h1 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
+  .brand p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .tab { background: none; border: 0; padding: 12px 0; font-weight: 700; font-size: 15px; color: var(--muted); border-bottom: 3px solid transparent; }
+  .tab.on { color: var(--text); border-color: var(--brand); }
+
+  /* ---------- 목록 화면 ---------- */
+  main { padding: 20px 16px 48px; }
+  .listHead { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+  .listHead h2 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+  .listHead p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .count { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--chip); border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; }
+  .chip.on { background: var(--chip-on); color: var(--chip-on-text); border-color: var(--chip-on); }
+  .toggle { display: flex; align-items: center; gap: 6px; margin: 8px 0 14px; color: var(--sub); font-size: 13px; }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--brand); }
+
+  .card { display: block; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px; margin-bottom: 12px; }
+  .meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sub); }
+  .meta b { color: var(--text); }
+  .meta .date { margin-left: auto; color: var(--muted); }
+  .type { font-size: 11px; font-weight: 800; letter-spacing: 0.02em; color: var(--brand); background: var(--brand-soft); padding: 3px 7px; border-radius: 6px; }
+  .card h3 { margin: 10px 0 6px; font-size: 18px; line-height: 1.4; letter-spacing: -0.01em; }
+  .card .take { margin: 0; color: var(--sub); font-size: 15px; line-height: 1.55; }
+  .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .score { font-size: 12px; font-weight: 800; padding: 4px 9px; border-radius: 8px; }
+  .score.high { color: var(--high); background: var(--high-soft); }
+  .score.mid  { color: var(--mid);  background: var(--mid-soft); }
+  .score.low  { color: var(--low);  background: var(--low-soft); }
+  .more { color: var(--brand); font-weight: 700; font-size: 14px; }
+
+  /* 타임라인 */
+  .timeline { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px 16px 4px; }
+  .timeline h3 { margin: 0 0 12px; font-size: 18px; }
+  .tl { display: grid; grid-template-columns: 44px 1fr; gap: 0 12px; text-align: left; width: 100%; background: none; border: 0; padding: 0; }
+  .tl .d { font-weight: 700; font-size: 13px; padding-top: 14px; text-align: right; }
+  .tl .body { border-left: 2px solid var(--line); padding: 12px 0 16px 16px; position: relative; }
+  .tl .body::before { content: ""; position: absolute; left: -7px; top: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--card); border: 2px solid var(--muted); }
+  .tl h4 { margin: 6px 0 4px; font-size: 16px; line-height: 1.4; }
+  .tl p { margin: 0; color: var(--sub); font-size: 14px; line-height: 1.5; }
+
+  .empty { text-align: center; color: var(--muted); padding: 48px 0; font-size: 14px; }
+
+  /* ---------- 상세 화면 ---------- */
+  .detail { padding: 8px 16px 48px; }
+  .back { background: none; border: 0; padding: 12px 0; font-weight: 700; color: var(--sub); }
+  .detail h2 { margin: 10px 0 14px; font-size: 24px; line-height: 1.35; letter-spacing: -0.02em; }
+  .takeBox { background: var(--brand-soft); border-radius: 16px; padding: 16px; font-weight: 600; line-height: 1.55; }
+  .takeBox small { display: block; color: var(--brand); font-weight: 800; font-size: 12px; margin-bottom: 6px; }
+  .sec { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-top: 12px; }
+  .sec h4 { margin: 0 0 8px; font-size: 13px; color: var(--muted); font-weight: 700; }
+  .sec p { margin: 0; line-height: 1.6; font-size: 15px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 380px) { .grid2 { grid-template-columns: 1fr; } }
+  .grid2 .sec { margin-top: 12px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { font-size: 13px; background: var(--low-soft); color: var(--sub); padding: 4px 9px; border-radius: 8px; }
+  .source { display: block; text-align: center; margin-top: 16px; padding: 14px; border-radius: 14px; background: var(--chip-on); color: var(--chip-on-text); font-weight: 700; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">📡</div>
+      <div><h1>Commerce Signal</h1><p>커머스 경쟁사의 움직임을 한눈에</p></div>
+    </div>
+    <nav class="tabs">
+      <button class="tab on" data-tab="feed">NOW</button>
+      <button class="tab" data-tab="timeline">회사별</button>
+    </nav>
+  </header>
+  <div id="view"></div>
+</div>
+
+<script>
+// ============================================================
+// 1. 설정: 우리 구글 시트
+// ============================================================
+const SHEET_ID = '16kEIBlp7reU8LdVL9V6wtDVouYVNK2yH8qGN1SsaVVY';
+const IMPORTANT_MIN = 30; // "중요한 것만" 필터 기준 점수
+
+// ============================================================
+// 2. 시트 읽기
+//    구글 시트의 gviz 주소에 탭 이름을 넣으면 데이터를 돌려줘요.
+//    update-radar와 같은 방식(JSONP)이라 서버 없이도 읽을 수 있어요.
+// ============================================================
+function loadSheet(sheetName) {
+  return new Promise((resolve, reject) => {
+    const callback = '__sheet' + Date.now() + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    window[callback] = (res) => {
+      try {
+        const cols = res.table.cols.map(c => c.label || c.id);
+        const rows = res.table.rows.map(r => {
+          const obj = {};
+          cols.forEach((key, i) => { const cell = r.c[i]; obj[key] = cell ? (cell.f ?? cell.v ?? '') : ''; });
+          return obj;
+        });
+        resolve(rows);
+      } catch (e) { reject(e); }
+      finally { delete window[callback]; script.remove(); }
+    };
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sheetName)}`
+      + `&headers=1&tqx=responseHandler:${callback}&_=${Date.now()}`;
+    script.onerror = () => { delete window[callback]; script.remove(); reject(new Error('시트를 불러오지 못했어요')); };
+    document.head.appendChild(script);
+  });
+}
+
+// ============================================================
+// 3. 화면 상태
+// ============================================================
+const state = { tab: 'feed', company: '전체', importantOnly: false, updates: [], loading: true, error: '' };
+
+const $view = document.getElementById('view');
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+const shortDate = (d) => String(d).slice(5, 10).replace('-', '.');           // 2026-10-22 → 10.22
+const fullDate  = (d) => String(d).slice(0, 10).replaceAll('-', '.');        // 2026-10-22 → 2026.10.22
+const scoreClass = (n) => n >= 70 ? 'high' : n >= 40 ? 'mid' : 'low';
+
+function companies() {
+  const counts = {};
+  state.updates.forEach(u => { counts[u.company] = (counts[u.company] || 0) + 1; });
+  return Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+}
+
+function visibleUpdates() {
+  return state.updates
+    .filter(u => state.company === '전체' || u.company === state.company)
+    .filter(u => !state.importantOnly || Number(u.impact_score) >= IMPORTANT_MIN);
+}
+
+// ============================================================
+// 4. 화면 그리기
+// ============================================================
+function renderChips(withAll) {
+  const list = (withAll ? ['전체'] : []).concat(companies());
+  return `<div class="chips">${list.map(c =>
+    `<button class="chip ${c === state.company ? 'on' : ''}" data-company="${esc(c)}">${c === '전체' ? '전체 기업' : esc(c)}</button>`
+  ).join('')}</div>`;
+}
+
+function renderToggle() {
+  return `<label class="toggle"><input type="checkbox" id="important" ${state.importantOnly ? 'checked' : ''}>
+    중요도 ${IMPORTANT_MIN}점 이상만 보기</label>`;
+}
+
+function renderCard(u) {
+  const score = Number(u.impact_score) || 0;
+  return `<button class="card" data-id="${esc(u.update_id)}">
+    <div class="meta"><span class="type">${esc(u.update_type)}</span><b>${esc(u.company)}</b><span>${esc(u.service)}</span>
+      <span class="date">${fullDate(u.published_at)}</span></div>
+    <h3>${esc(u.title)}</h3>
+    <p class="take">${esc(u.key_takeaway || u.summary)}</p>
+    <div class="foot"><span class="score ${scoreClass(score)}">중요도 ${score}</span><span class="more">상세보기 →</span></div>
+  </button>`;
+}
+
+function renderFeed() {
+  const list = visibleUpdates();
+  return `<main>
+    <div class="listHead"><div><h2>NOW</h2><p>구독 기업의 최신 업데이트</p></div><span class="count">${list.length}건</span></div>
+    ${renderChips(true)}
+    ${renderToggle()}
+    ${list.length ? list.map(renderCard).join('') : '<div class="empty">조건에 맞는 업데이트가 없어요.</div>'}
+  </main>`;
+}
+
+function renderTimeline() {
+  if (state.company === '전체') state.company = companies()[0] || '전체';
+  const list = visibleUpdates();
+  return `<main>
+    <div class="listHead"><div><h2>회사별</h2><p>회사별 업데이트 타임라인</p></div><span class="count">${list.length}건</span></div>
+    ${renderChips(false)}
+    ${renderToggle()}
+    <section class="timeline"><h3>${esc(state.company)} 업데이트 타임라인</h3>
+      ${list.length ? list.map(u => `<button class="tl" data-id="${esc(u.update_id)}">
+        <span class="d">${shortDate(u.published_at)}</span>
+        <div class="body"><span class="type">${esc(u.update_type)}</span>
+          <h4>${esc(u.title)}</h4><p>${esc(u.summary)}</p></div>
+      </button>`).join('') : '<div class="empty">조건에 맞는 업데이트가 없어요.</div>'}
+    </section>
+  </main>`;
+}
+
+function renderDetail(u) {
+  const score = Number(u.impact_score) || 0;
+  const section = (title, text) => text ? `<div class="sec"><h4>${title}</h4><p>${esc(text)}</p></div>` : '';
+  const keywords = String(u.keywords || '').split(',').map(s => s.trim()).filter(Boolean);
+  return `<div class="detail">
+    <button class="back" id="back">‹ 목록으로</button>
+    <div class="meta"><span class="type">${esc(u.update_type)}</span><b>${esc(u.company)}</b><span>${esc(u.service)}</span>
+      <span class="date">${fullDate(u.published_at)}</span></div>
+    <h2>${esc(u.title)}</h2>
+    ${u.key_takeaway ? `<div class="takeBox"><small>한 줄 인사이트</small>${esc(u.key_takeaway)}</div>` : ''}
+    ${section('핵심 요약', u.summary)}
+    ${section('무엇이 바뀌었나', u.what_changed)}
+    <div class="grid2">${section('유저에게 주는 가치', u.user_value)}${section('타겟 유저', u.target_user)}</div>
+    ${section('왜 중요한가', u.why_it_matters)}
+    <div class="sec"><h4>중요도 · 키워드</h4>
+      <div class="tags"><span class="score ${scoreClass(score)}">중요도 ${score}</span>${keywords.map(k => `<span>#${esc(k)}</span>`).join('')}</div></div>
+    ${u.source_url ? `<a class="source" href="${esc(u.source_url)}" target="_blank" rel="noopener">원문 공지 보기 ↗</a>` : ''}
+  </div>`;
+}
+
+function render() {
+  // 주소 끝이 #/u/아이디 이면 상세 화면을 보여줘요 (뒤로가기 버튼이 동작하도록)
+  const match = location.hash.match(/^#\/u\/(.+)$/);
+  document.querySelector('.tabs').style.display = match ? 'none' : '';
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === state.tab));
+
+  if (state.loading) { $view.innerHTML = '<div class="empty">시트에서 업데이트를 불러오는 중…</div>'; return; }
+  if (state.error)   { $view.innerHTML = `<div class="empty">${esc(state.error)}</div>`; return; }
+
+  if (match) {
+    const u = state.updates.find(x => x.update_id === decodeURIComponent(match[1]));
+    $view.innerHTML = u ? renderDetail(u) : '<div class="empty">업데이트를 찾을 수 없어요.</div>';
+    window.scrollTo(0, 0);
+    return;
+  }
+  $view.innerHTML = state.tab === 'feed' ? renderFeed() : renderTimeline();
+}
+
+// ============================================================
+// 5. 클릭 처리
+// ============================================================
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab');
+  if (tab) { state.tab = tab.dataset.tab; state.company = '전체'; render(); return; }
+
+  const chip = e.target.closest('.chip');
+  if (chip) { state.company = chip.dataset.company; render(); return; }
+
+  const item = e.target.closest('[data-id]');
+  if (item) { location.hash = '#/u/' + encodeURIComponent(item.dataset.id); return; }
+
+  if (e.target.closest('#back')) { history.length > 1 ? history.back() : (location.hash = ''); }
+});
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'important') { state.importantOnly = e.target.checked; render(); }
+});
+window.addEventListener('hashchange', render);
+
+// ============================================================
+// 6. 시작: 시트를 읽고, 최신순으로 정렬해서 그려요
+// ============================================================
+loadSheet('updates')
+  .then(rows => {
+    state.updates = rows
+      .filter(r => r.update_id)
+      .sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)));
+  })
+  .catch(err => { state.error = err.message; })
+  .finally(() => { state.loading = false; render(); });
+
+render();
+</script>
+</body>
+</html>
