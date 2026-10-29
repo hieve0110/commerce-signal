@@ -1,0 +1,63 @@
+# commerce-signal POC 설정 — 카페/베이커리 가격 비교
+# 비밀값(슬랙 웹훅 등)은 여기 넣지 말고 환경변수로 설정하세요. (README 참고)
+
+[storage]
+db_path = "data/commerce_signal.db"
+
+[todaysales]
+# 오늘얼마 Shopby Shop API (프론트용 공개 clientId)
+api_base = "https://shop-api.e-ncp.com"
+client_id = "f/+zEnBJHLSUBU9GCqKXpg=="
+# 오늘얼마 마켓 > 베이커리·카페
+category_no = "1270088"
+page_size = 100
+request_interval_sec = 0.3
+
+[baemin]
+# 배민상회: 셀러 단위로 전 상품 수집 → 매칭 단계에서 카페/베이커리 상품만 남음
+enabled = true
+api_base = "https://gw-api-mart.baemin.com/front-api/v1"
+request_interval_sec = 1.0
+# 직배송/새벽/장날배송만 수집 (택배 제외)
+collect_delivery_types = ["DIRECT_DELIVERY", "FRESH", "MARKET_DAY"]
+sellers = [
+  { id = "907",  name = "이너피스" },
+  { id = "2090", name = "그로우식자재" },
+  { id = "2089", name = "스마일푸드" },
+  { id = "1384", name = "다봄푸드" },
+  { id = "1774", name = "온국민신선몰" },
+  { id = "2057", name = "세현F&B" },
+  { id = "2039", name = "현대그린푸드" },
+]
+
+[foodspring]
+# 식봄: 셀러(vendor) 단위로 전 상품 수집
+enabled = true
+api_url = "https://api.foodspring.co.kr/v2/graphql"
+request_interval_sec = 0.5
+sellers = [
+  { id = "1517", name = "CJ프레시웨이" },
+  { id = "5081", name = "푸드팡-수도권" },
+  { id = "2716", name = "현대그린푸드" },
+  { id = "2626", name = "식자재119" },
+  { id = "867",  name = "온국민 신선몰" },
+  { id = "1388", name = "다봄푸드" },
+]
+
+[matching]
+# 이 점수 이상 + 용량 단위가 같으면 자동 매칭(리포트에 바로 반영, 나중에 사람이 검수)
+auto_threshold = 0.82
+# 이 점수 이상은 '검수 필요' 후보로 저장 (리포트에는 미반영)
+suggest_threshold = 0.6
+# 우리 상품 1개당 저장할 후보 수
+max_candidates = 5
+# 자동 매칭 허용 용량 비율 (예: 1kg vs 2kg 까지는 같은 상품으로 볼 수 있음)
+max_size_ratio = 2.0
+
+[report]
+# 우리 단가 vs 경쟁 최저 단가 차이(%) 기준 등급
+competitive_pct = 5.0     # 0% < 차이 <= 5%  → 경쟁
+weak_pct = 15.0           # 5% < 차이 <= 15% → 열위,  15% 초과 → 크게 열위
+top_n = 10
+# 전일 대비 경쟁사 단가가 이만큼(%) 이상 내리면 알림
+competitor_drop_alert_pct = 5.0
