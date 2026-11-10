@@ -12,7 +12,8 @@
 
 - 데이터: [Commerce Signal DB](https://docs.google.com/spreadsheets/d/16kEIBlp7reU8LdVL9V6wtDVouYVNK2yH8qGN1SsaVVY/edit)
   - `updates` 탭: 수집한 업데이트 (무엇이 바뀌었나, 유저 가치, 타겟 유저, 한 줄 인사이트 등)
-  - `sources` 탭: 수집 대상 회사와 공지 URL
+  - `news` 탭: 언론 기사 (같은 칸 구성 + 언론사)
+  - `sources` 탭: 수집 대상 회사와 공지·뉴스 검색 URL
 - 화면: `index.html` 한 파일. 페이지가 열릴 때 공개된 시트를 읽어서 보여줍니다.
 
 ## 로컬에서 보기

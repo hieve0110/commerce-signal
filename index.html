@@ -66,7 +66,7 @@
   .seg { display: inline-flex; border: 1px solid var(--ink); border-radius: 999px; overflow: hidden; font-size: 13px; font-weight: 700; }
   .seg button { padding: 7px 14px; }
   .seg button.on { background: var(--ink); color: var(--paper); }
-  .reset { font-size: 13px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .reset { display: block; margin: -4px 0 4px; font-size: 13px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 
   /* 신호 막대 */
   .sig { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
@@ -94,6 +94,7 @@
   .item h3 { margin: 6px 0 6px; font-size: 18px; line-height: 1.45; }
   .item p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
   .item .type { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--ink-3); }
+  .item .type.news { color: var(--signal); letter-spacing: .02em; }
 
   .empty { text-align: center; color: var(--ink-3); padding: 56px 0; font-size: 14px; }
   .colophon { margin-top: 36px; font-size: 12px; color: var(--ink-3); text-align: center; line-height: 1.7; }
@@ -132,7 +133,10 @@
 // ============================================================
 const SHEET_ID = '16kEIBlp7reU8LdVL9V6wtDVouYVNK2yH8qGN1SsaVVY';
 const MAJOR_MIN = 40;   // "주요"로 볼 중요도 기준
-const COMPANY_COLORS = { '식봄': '#f97316', '네이버페이': '#03c75a', '쿠팡': '#e11d48', '카카오쇼핑': '#eab308', '배민상회': '#2ac1bc' };
+const COMPANY_COLORS = {
+  '식봄': '#f97316', '네이버페이': '#03c75a', '쿠팡': '#e11d48', '카카오쇼핑': '#eab308',
+  '배민상회': '#2ac1bc', '배민': '#2ac1bc', '네이버': '#0f766e',
+};
 const colorOf = (c) => COMPANY_COLORS[c] || '#a8a29e';
 
 // ============================================================
@@ -163,7 +167,9 @@ function loadSheet(sheetName) {
 // ============================================================
 // 3. 상태와 도우미
 // ============================================================
-const state = { updates: [], hidden: new Set(), majorOnly: false, loading: true, error: '' };
+// kind: 'all' 전체 · 'notice' 공식 공지(updates 탭) · 'news' 뉴스(news 탭)
+const state = { updates: [], hidden: new Set(), majorOnly: false, kind: 'all', loading: true, error: '' };
+const KIND_LABELS = { all: '전체', notice: '공지', news: '뉴스' };
 const $app = document.getElementById('app');
 const $sheet = document.getElementById('sheet');
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -189,6 +195,7 @@ function companyCounts() {
 }
 function visible() {
   return state.updates
+    .filter(u => state.kind === 'all' || u.kind === state.kind)
     .filter(u => !state.hidden.has(u.company))
     .filter(u => !state.majorOnly || score(u) >= MAJOR_MIN);
 }
@@ -199,10 +206,11 @@ function visible() {
 function renderMasthead(list) {
   const now = new Date();
   const major = list.filter(u => score(u) >= MAJOR_MIN).length;
+  const notices = list.filter(u => u.kind === 'notice').length;
   return `<header class="masthead">
     <div class="top"><span>COMMERCE SIGNAL</span><span>${now.getMonth() + 1}.${now.getDate()} ${WEEKDAYS[now.getDay()]}</span></div>
     <h1 class="serif">경쟁사 시그널 <em>${list.length}</em>건,<br>그중 주요 ${major}건</h1>
-    <p>커머스 경쟁사의 공지와 업데이트를 아침 브리핑으로 정리했어요.</p>
+    <p>공식 공지 ${notices}건과 뉴스 ${list.length - notices}건을 아침 브리핑으로 정리했어요.</p>
   </header>`;
 }
 
@@ -216,25 +224,30 @@ function renderBoard() {
     </button>`).join('')}
   </section>
   <div class="filters">
-    <div class="seg"><button data-major="0" class="${state.majorOnly ? '' : 'on'}">전체</button><button data-major="1" class="${state.majorOnly ? 'on' : ''}">주요만</button></div>
-    ${state.hidden.size ? '<button class="reset" id="reset">모든 회사 보기</button>' : ''}
-  </div>`;
+    <div class="seg">${Object.entries(KIND_LABELS).map(([k, label]) =>
+      `<button data-kind="${k}" class="${state.kind === k ? 'on' : ''}">${label}</button>`).join('')}</div>
+    <div class="seg"><button data-major="0" class="${state.majorOnly ? '' : 'on'}">전부</button><button data-major="1" class="${state.majorOnly ? 'on' : ''}">주요만</button></div>
+  </div>
+  ${state.hidden.size ? '<button class="reset" id="reset">모든 회사 보기</button>' : ''}`;
 }
 
+// 공지는 유형(POLICY 등), 뉴스는 "NEWS · 언론사"로 표시
+const typeLabel = (u) => u.kind === 'news' ? `NEWS · ${u.press}` : u.update_type;
+
 function renderLead(u) {
-  return `<button class="lead" data-id="${esc(u.update_id)}">
+  return `<button class="lead" data-id="${esc(u.id)}">
     <div class="kicker">${signalBars(score(u))} 가장 강한 시그널</div>
     <h3 class="serif">${esc(u.key_takeaway || u.title)}</h3>
     <p>${esc(u.what_changed || u.summary)}</p>
-    <div class="by">${esc(u.company)} · ${esc(u.service)} · ${esc(String(u.published_at).slice(0, 10))}</div>
+    <div class="by">${esc(u.company)} · ${esc(u.kind === 'news' ? u.press : u.service)} · ${esc(String(u.published_at).slice(0, 10))}</div>
   </button>`;
 }
 
 function renderItem(u) {
-  return `<button class="item" data-id="${esc(u.update_id)}">
+  return `<button class="item" data-id="${esc(u.id)}">
     <span class="stripe" style="background:${colorOf(u.company)}"></span>
     <div>
-      <div class="who"><b>${esc(u.company)}</b><span class="type">${esc(u.update_type)}</span>${signalBars(score(u))}</div>
+      <div class="who"><b>${esc(u.company)}</b><span class="type ${u.kind === 'news' ? 'news' : ''}">${esc(typeLabel(u))}</span>${signalBars(score(u))}</div>
       <h3 class="serif">${esc(u.title)}</h3>
       <p>${esc(u.key_takeaway || u.summary)}</p>
     </div>
@@ -259,7 +272,7 @@ function renderPage() {
   const lead = [...list].sort((a, b) => score(b) - score(a))[0];
   $app.innerHTML = renderMasthead(list) + renderBoard()
     + (lead ? renderLead(lead) + renderDays(list.filter(u => u !== lead)) : '<div class="empty">조건에 맞는 시그널이 없어요.</div>')
-    + '<div class="colophon">데이터: Commerce Signal DB (Google Sheets)<br>각 회사의 공식 공지를 바탕으로 정리했어요.</div>';
+    + '<div class="colophon">데이터: Commerce Signal DB (Google Sheets)<br>각 회사의 공식 공지와 언론 보도를 바탕으로 정리했어요.</div>';
 }
 
 function renderSheet(u) {
@@ -268,21 +281,21 @@ function renderSheet(u) {
   $sheet.innerHTML = `<div class="grip"></div>
     <button class="close" id="close">닫기 ✕</button>
     <div class="who"><span class="dot" style="background:${colorOf(u.company)}"></span><b>${esc(u.company)}</b>
-      <span>${esc(u.service)}</span><span>· ${esc(String(u.published_at).slice(0, 10))}</span></div>
+      <span>${esc(u.kind === 'news' ? `${u.press} 보도` : u.service)}</span><span>· ${esc(String(u.published_at).slice(0, 10))}</span></div>
     <h2 class="serif">${esc(u.title)}</h2>
     ${u.key_takeaway ? `<p class="pull">${esc(u.key_takeaway)}</p>` : ''}
     ${qa('뭐가 바뀌었어?', u.what_changed)}
     <div class="pair">${qa('누구한테 해당돼?', u.target_user)}${qa('유저한테 뭐가 좋아?', u.user_value)}</div>
     ${qa('그래서 왜 중요해?', u.why_it_matters)}
-    ${qa('원문 요약', u.summary)}
+    ${qa(u.kind === 'news' ? '기사 요약' : '원문 요약', u.summary)}
     <div class="tags">${signalBars(score(u))}<span>중요도 ${score(u)}</span>${keywords.map(k => `<span>#${esc(k)}</span>`).join('')}</div>
-    ${u.source_url ? `<a class="src" href="${esc(u.source_url)}" target="_blank" rel="noopener">원문 공지 보기 ↗</a>` : ''}`;
+    ${u.url ? `<a class="src" href="${esc(u.url)}" target="_blank" rel="noopener">${u.kind === 'news' ? '기사 원문 보기' : '원문 공지 보기'} ↗</a>` : ''}`;
 }
 
 // 주소 끝이 #/u/아이디 이면 상세 시트를 열어요 (휴대폰 뒤로가기로 닫히도록)
 function route() {
   const match = location.hash.match(/^#\/u\/(.+)$/);
-  const u = match && state.updates.find(x => x.update_id === decodeURIComponent(match[1]));
+  const u = match && state.updates.find(x => x.id === decodeURIComponent(match[1]));
   if (u) { renderSheet(u); $sheet.scrollTop = 0; }
   document.body.classList.toggle('open', !!u);
   document.body.classList.toggle('locked', !!u);
@@ -302,6 +315,8 @@ document.addEventListener('click', (e) => {
   }
   const seg = e.target.closest('[data-major]');
   if (seg) { state.majorOnly = seg.dataset.major === '1'; renderPage(); return; }
+  const kind = e.target.closest('[data-kind]');
+  if (kind) { state.kind = kind.dataset.kind; renderPage(); return; }
   if (e.target.closest('#reset')) { state.hidden.clear(); renderPage(); return; }
   if (e.target.closest('#close') || e.target.id === 'shade') { closeSheet(); return; }
 
@@ -312,12 +327,14 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document
 window.addEventListener('hashchange', route);
 
 // ============================================================
-// 6. 시작: 시트를 읽어 최신순으로 정렬
+// 6. 시작: 공지(updates)와 뉴스(news) 탭을 함께 읽어 한 목록으로 합쳐요.
+//    두 탭은 칸 이름이 조금 달라서(id, 링크) 같은 이름으로 맞춰 줘요.
 // ============================================================
-loadSheet('updates')
-  .then(rows => {
-    state.updates = rows
-      .filter(r => r.update_id)
+Promise.all([loadSheet('updates'), loadSheet('news').catch(() => [])])
+  .then(([updateRows, newsRows]) => {
+    const notices = updateRows.filter(r => r.update_id).map(r => ({ ...r, kind: 'notice', id: r.update_id, url: r.source_url }));
+    const news = newsRows.filter(r => r.news_id).map(r => ({ ...r, kind: 'news', id: r.news_id, url: r.news_url }));
+    state.updates = [...notices, ...news]
       .sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)) || score(b) - score(a));
   })
   .catch(err => { state.error = err.message; })
