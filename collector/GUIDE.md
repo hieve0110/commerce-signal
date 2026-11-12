@@ -56,8 +56,8 @@
 | `published_at` | `YYYY-MM-DD`. 후보의 `date`, 없으면 본문의 날짜. 앞에 작은따옴표 `'`를 붙여 글자로 저장한다. |
 | `update_type` (updates만) | FEATURE, POLICY, API, EXPERIMENT, LAUNCH, EVENT, PARTNERSHIP, PR 중 하나 |
 | `press` (news만) | 언론사 이름 (예: 전자신문). `articles.json`의 `press`가 비면 기사 주소로 판단한다. |
-| `title` | 원문 제목 그대로. 목록에서 붙은 "카테고리 명 일반 공지 일자…", "new 공통 2026-11-11" 같은 꼬리는 지운다. |
-| `summary` | 핵심 내용 1~2문장. 날짜, 숫자, 대상을 구체적으로 쓴다. |
+| `title` | 원문 제목 그대로. 목록에서 붙은 "카테고리 명 일반 공지 일자…", "new 공통 2026-11-11" 같은 꼬리는 지운다. 영어 등 외국어 제목은 한국어로 옮기고 원제를 괄호에 붙인다. 예: `Shop 노출 자격 요건 변경 (Updated eligibility requirements for Shop)` |
+| `summary` | 핵심 내용 1~2문장. 날짜, 숫자, 대상을 구체적으로 쓴다. 본문 끝까지 읽고 "단, ~는 제외" 같은 예외 조건이 있으면 꼭 넣는다. |
 | `what_changed` | 바뀐 점만 짧게. "기존 → 변경" 형식이 좋다. |
 | `user_value` | 이용자(판매자, 광고주, 구매자)가 얻는 것 1~2문장 |
 | `target_user` | 누가 영향을 받는지 짧게 |
