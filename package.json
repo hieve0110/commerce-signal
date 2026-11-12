@@ -1,0 +1,14 @@
+{
+  "name": "commerce-signal",
+  "private": true,
+  "type": "module",
+  "description": "커머스 경쟁사 공지·뉴스 수집기와 브리핑 페이지",
+  "scripts": {
+    "collect": "NODE_USE_ENV_PROXY=1 NODE_NO_WARNINGS=1 node collector/collect.mjs",
+    "read": "NODE_USE_ENV_PROXY=1 NODE_NO_WARNINGS=1 node collector/read.mjs",
+    "serve": "python3 -m http.server 8000"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
