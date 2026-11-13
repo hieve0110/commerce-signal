@@ -111,6 +111,7 @@
   .sheet .who b { color: var(--ink); }
   .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .sheet h2 { clear: both; margin: 12px 0 16px; font-size: 22px; line-height: 1.45; }
+  .orig { margin: -8px 0 16px; font-size: 13px; line-height: 1.5; color: var(--ink-3); }
   .pull { margin: 0 0 8px; padding: 2px 0 2px 14px; border-left: 3px solid var(--signal); font-size: 17px; font-weight: 600; line-height: 1.6; }
   .qa { padding: 16px 0; border-bottom: 1px solid var(--rule); }
   .qa h4 { margin: 0 0 6px; font-size: 15px; }
@@ -250,7 +251,7 @@ function renderItem(u) {
     <span class="stripe" style="background:${colorOf(u.company)}"></span>
     <div>
       <div class="who"><b>${esc(u.company)}</b><span class="type ${u.kind === 'news' ? 'news' : ''}">${esc(typeLabel(u))}</span>${signalBars(score(u))}</div>
-      <h3 class="serif">${esc(u.title)}</h3>
+      <h3 class="serif">${esc(u.headline || u.title)}</h3>
       <p>${esc(u.key_takeaway || u.summary)}</p>
     </div>
   </button>`;
@@ -284,7 +285,8 @@ function renderSheet(u) {
     <button class="close" id="close">닫기 ✕</button>
     <div class="who"><span class="dot" style="background:${colorOf(u.company)}"></span><b>${esc(u.company)}</b>
       <span>${esc(u.kind === 'news' ? `${u.press} 보도` : u.service)}</span><span>· ${esc(String(u.published_at).slice(0, 10))}</span></div>
-    <h2 class="serif">${esc(u.title)}</h2>
+    <h2 class="serif">${esc(u.headline || u.title)}</h2>
+    ${u.headline && u.headline !== u.title ? `<p class="orig">원문 제목 · ${esc(u.title)}</p>` : ''}
     ${u.key_takeaway ? `<p class="pull">${esc(u.key_takeaway)}</p>` : ''}
     ${qa('뭐가 바뀌었어?', u.what_changed)}
     <div class="pair">${qa('누구한테 해당돼?', u.target_user)}${qa('유저한테 뭐가 좋아?', u.user_value)}</div>

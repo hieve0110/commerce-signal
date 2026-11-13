@@ -62,6 +62,7 @@
 | `update_type` (updates만) | FEATURE, POLICY, API, EXPERIMENT, LAUNCH, EVENT, PARTNERSHIP, PR 중 하나 |
 | `press` (news만) | 언론사 이름 (예: 전자신문). `articles.json`의 `press`가 비면 기사 주소로 판단한다. |
 | `title` | 원문 제목 그대로. 목록에서 붙은 "카테고리 명 일반 공지 일자…", "new 공통 2026-11-11" 같은 꼬리는 지운다. 영어 등 외국어 제목은 한국어로 옮기고 원제를 괄호에 붙인다. 예: `Shop 노출 자격 요건 변경 (Updated eligibility requirements for Shop)` |
+| `headline` | 화면에 크게 보이는 제목. 원문 제목이 아니라 "누가 무엇을 어떻게 바꿨나"가 한눈에 보이게 새로 쓴다. `회사(서비스), 핵심 변화` 형식으로 40자 안팎. 숫자·날짜·대상이 있으면 넣는다. 예: `당근 리드폼, 혜택 설명형 이미지 높이 70%·50%로 시험`, `쿠팡, 12/14부터 판매자별 상품 등록 한도…실적 따라 차등`, `네이버페이, 11/15 씨티은행 연동 결제·송금 16시간 중단`. "안내", "공지" 같은 말은 빼고, 시트에 이미 있는 headline들의 말투에 맞춘다. |
 | `summary` | 핵심 내용 1~2문장. 날짜, 숫자, 대상을 구체적으로 쓴다. 본문 끝까지 읽고 "단, ~는 제외" 같은 예외 조건이 있으면 꼭 넣는다. |
 | `what_changed` | 바뀐 점만 짧게. "기존 → 변경" 형식이 좋다. |
 | `user_value` | 이용자(판매자, 광고주, 구매자)가 얻는 것 1~2문장 |
@@ -90,8 +91,9 @@
 
 1. 각 탭의 A열을 `get_values`로 읽어 마지막 행 다음 줄을 찾는다 (예: `updates!A:A`).
 2. 탭마다 `update_values` 한 번에 여러 행을 쓴다. 값은 칸 순서대로 넣는다.
-   - `updates`: update_id, company, service, published_at, update_type, title, summary, what_changed, user_value, target_user, why_it_matters, key_takeaway, keywords, impact_score, source_url, collected_at
-   - `news`: news_id, company, service, published_at, press, title, summary, what_changed, user_value, target_user, why_it_matters, key_takeaway, keywords, impact_score, news_url, collected_at
+   - `updates`: update_id, company, service, published_at, update_type, title, summary, what_changed, user_value, target_user, why_it_matters, key_takeaway, keywords, impact_score, source_url, collected_at, headline
+   - `news`: news_id, company, service, published_at, press, title, summary, what_changed, user_value, target_user, why_it_matters, key_takeaway, keywords, impact_score, news_url, collected_at, headline
+   - 칸 순서가 틀리면 화면에 엉뚱한 값이 나온다. 쓰기 전에 각 탭의 1행(헤더)을 읽어 순서를 확인한다.
    - `seen`: url, kind, decision(added/skipped), reason, title, checked_at
 3. 날짜 칸은 `'2026-11-11`처럼 작은따옴표를 붙인다. 붙이지 않으면 시트가 날짜 형식으로 바꿔서 웹페이지가 빈칸으로 읽는다.
 4. 다 쓴 뒤 `get_values`로 방금 쓴 범위를 다시 읽어 확인한다.
