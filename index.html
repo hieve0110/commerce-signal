@@ -134,6 +134,7 @@
 // ============================================================
 const SHEET_ID = '16kEIBlp7reU8LdVL9V6wtDVouYVNK2yH8qGN1SsaVVY';
 const MAJOR_MIN = 40;   // "주요"로 볼 중요도 기준
+const LEAD_DAYS = 3;    // "가장 강한 시그널"은 최근 며칠 안의 글에서만 고를지 (오늘 포함)
 const COMPANY_COLORS = {
   '식봄': '#f97316', '네이버페이': '#03c75a', '쿠팡': '#e11d48', '카카오쇼핑': '#eab308',
   '배민상회': '#2ac1bc', '배민': '#2ac1bc', '네이버': '#0f766e',
@@ -184,9 +185,13 @@ const signalBars = (n) => `<span class="sig ${level(n) === 4 ? 'hot' : ''}" titl
   [1, 2, 3, 4].map(i => `<i class="${i <= level(n) ? 'on' : ''}"></i>`).join('')}</span>`;
 
 function parseDate(s) { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); }
+function daysAgo(s) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return Math.round((today - parseDate(s)) / 86400000);
+}
 function dayLabel(s) {
-  const d = parseDate(s), today = new Date(); today.setHours(0, 0, 0, 0);
-  const diff = Math.round((today - d) / 86400000);
+  const d = parseDate(s);
+  const diff = daysAgo(s);
   const base = `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS[d.getDay()]}요일`;
   return diff === 0 ? `오늘 · ${base}` : diff === 1 ? `어제 · ${base}` : base;
 }
@@ -272,9 +277,14 @@ function renderPage() {
   if (state.error)   { $app.innerHTML = `<div class="empty">${esc(state.error)}</div>`; return; }
 
   const list = visible();
-  const lead = [...list].sort((a, b) => score(b) - score(a))[0];
+  // 가장 강한 시그널은 최근 LEAD_DAYS일(오늘 포함) 안에 나온 글 중에서만 골라요.
+  // 같은 점수면 더 최근 글. 해당 글이 없으면 맨 위 박스를 보여주지 않아요.
+  const lead = list
+    .filter(u => daysAgo(u.published_at) < LEAD_DAYS)
+    .sort((a, b) => score(b) - score(a) || String(b.published_at).localeCompare(String(a.published_at)))[0];
   $app.innerHTML = renderMasthead(list) + renderBoard()
-    + (lead ? renderLead(lead) + renderDays(list.filter(u => u !== lead)) : '<div class="empty">조건에 맞는 시그널이 없어요.</div>')
+    + (lead ? renderLead(lead) : '')
+    + (list.length ? renderDays(list.filter(u => u !== lead)) : '<div class="empty">조건에 맞는 시그널이 없어요.</div>')
     + '<div class="colophon">데이터: Commerce Signal DB (Google Sheets)<br>각 회사의 공식 공지와 언론 보도를 바탕으로 정리했어요.</div>';
 }
 
